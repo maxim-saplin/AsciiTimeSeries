@@ -6,7 +6,7 @@
 # Usage
 1. Cpoy-paste [AsciiTimeSeries.cs](https://raw.githubusercontent.com/maxim-saplin/AsciiTimeSeries/master/AsciiTimeSeries.cs) to your project.
 
-2. Create it's instance, set Series propertie and render it to a string:
+2. Create it's instance, set Series property and render it to a string:
 ```
 var ascii = new AsciiTimeSeries();
 ascii.Series = series;
