@@ -98,10 +98,14 @@ namespace Saplin.TimeSeries
 
             if (HeigthLines <= 1) throw new InvalidOperationException("TimeSeries.HeigthLines must be greater than 1, now it isn't");
 
+            if (Min.HasValue && Max.HasValue && Min >= Max) throw new InvalidOperationException("TimeSeries.Max must be greater than TimeSeries.Min");
+
             var min = Min.HasValue ? Min.Value : series.Min();
             var max = Max.HasValue ? Max.Value : series.Max();
 
-            if (min == max) { min -= 1; ; max += 1; }
+            if (min > max) { max = min; min = max; } // swap min/max in one of the points is fixed, another calculated and they happen to be at odds
+
+            if (min == max) { min -= 1; ; max += 1; } // straight horizontal line, min max will be autocalculated to the same value
 
             var range = Math.Abs(max - min);
             var bucket = range / (HeigthLines - 1);
@@ -217,37 +221,40 @@ namespace Saplin.TimeSeries
             var nextRow = (int)Math.Round((max - nextVal) / bucket);
             var diff = nextRow - curRow;
 
-            if (curRow == nextRow)
+            if (curRow == nextRow && curRow >= 0 && curRow < plotRows)
             {
                 plot[curRow, col] = '─';
             }
             else if (curRow < nextRow)
             {
-                plot[curRow, col] = '╮';
-                plot[nextRow, col] = '╰';
+                if (curRow >= 0 && curRow < plotRows) plot[curRow, col] = '╮';
+                if (nextRow >= 0 && nextRow < plotRows) plot[nextRow, col] = '╰';
             }
             else if (curRow > nextRow)
             {
-                plot[curRow, col] = '╯';
-                plot[nextRow, col] = '╭';
+                if (curRow >= 0 && curRow < plotRows) plot[curRow, col] = '╯';
+                if (nextRow >= 0 && nextRow < plotRows) plot[nextRow, col] = '╭';
             }
+
+            var correction = curRow < 0 ? 0 : 1;
 
             if (diff > 1)
             {
-                for (var k = curRow + 1; k < nextRow; k++)
+                for (var k = Math.Max(curRow, 0) + correction; k < Math.Min(nextRow, plotRows); k++)
                     plot[k, col] = '│';
             }
-            if (diff < -1)
+            else if (diff < -1)
             {
-                for (var k = curRow - 1; k > nextRow; k--)
+                for (var k = Math.Min(curRow, plotRows) - 1; k > Math.Max(nextRow, -1); k--)
                     plot[k, col] = '│';
             }
 
+            correction = nextRow < 0 && curRow < 0 ? 0 : 1;
 
-            for (var k = Math.Max(curRow, nextRow) + 1; k < HeigthLines; k++)
+            for (var k = Math.Max(Math.Max(curRow, nextRow), 0) + correction; k < HeigthLines; k++)
                 plot[k, col] = BelowPointChar;
 
-            for (var k = Math.Min(curRow, nextRow) - 1; k >= 0; k--)
+            for (var k = Math.Min(Math.Min(curRow, nextRow), plotRows) - 1; k >= 0; k--)
                 plot[k, col] = AbovePointChar;
         }
 
@@ -305,7 +312,7 @@ namespace Saplin.TimeSeries
             }
         }
 
-        int plotRows, plotCols;
+        int plotRows, plotCols;  // actual dimensions of the plot
 
         const int plotGrowByCols = 100;
 
@@ -315,7 +322,7 @@ namespace Saplin.TimeSeries
             plotCols = cols;
             //if plot matrix happens to be bigger than needed, keep it and stor only the bound
             if (plot == null || plot.GetUpperBound(0) + 1 < rows || plot.GetUpperBound(1) + 1 < cols)
-                plot = new char[rows, (int)Math.Ceiling(cols/(double)plotGrowByCols)*plotGrowByCols];
+                plot = new char[rows, (int)Math.Ceiling(cols / (double)plotGrowByCols) * plotGrowByCols];
 
             for (var i = 0; i < rows; i++)
                 for (var k = 0; k < cols; k++)
