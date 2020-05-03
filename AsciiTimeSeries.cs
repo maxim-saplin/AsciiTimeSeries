@@ -217,8 +217,8 @@ namespace Saplin.TimeSeries
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ConnectDots(double max, double bucket, int col, double currVal, double nextVal)
         {
-            var curRow = (int)Math.Round((max - currVal) / bucket);
-            var nextRow = (int)Math.Round((max - nextVal) / bucket);
+            var curRow = (int)Math.Round((max - currVal) / bucket, MidpointRounding.AwayFromZero);
+            var nextRow = (int)Math.Round((max - nextVal) / bucket, MidpointRounding.AwayFromZero);
             var diff = nextRow - curRow;
 
             if (curRow == nextRow && curRow >= 0 && curRow < plotRows)
@@ -240,18 +240,18 @@ namespace Saplin.TimeSeries
 
             if (diff > 1)
             {
-                for (var k = Math.Max(curRow, 0) + correction; k < Math.Min(nextRow, plotRows); k++)
+                for (var k = Math.Max(curRow,0) + correction; k < Math.Min(nextRow, plotRows); k++)
                     plot[k, col] = '│';
             }
             else if (diff < -1)
             {
-                for (var k = Math.Min(curRow, plotRows) - 1; k > Math.Max(nextRow, -1); k--)
+                for (var k = Math.Min(curRow, plotRows) - 1; k > Math.Max(nextRow,-1); k--)
                     plot[k, col] = '│';
             }
 
             correction = nextRow < 0 && curRow < 0 ? 0 : 1;
 
-            for (var k = Math.Max(Math.Max(curRow, nextRow), 0) + correction; k < HeigthLines; k++)
+            for (var k = Math.Max(Math.Max(curRow, nextRow),0) + correction; k < HeigthLines; k++)
                 plot[k, col] = BelowPointChar;
 
             for (var k = Math.Min(Math.Min(curRow, nextRow), plotRows) - 1; k >= 0; k--)
@@ -322,7 +322,7 @@ namespace Saplin.TimeSeries
             plotCols = cols;
             //if plot matrix happens to be bigger than needed, keep it and stor only the bound
             if (plot == null || plot.GetUpperBound(0) + 1 < rows || plot.GetUpperBound(1) + 1 < cols)
-                plot = new char[rows, (int)Math.Ceiling(cols / (double)plotGrowByCols) * plotGrowByCols];
+                plot = new char[rows, (int)Math.Ceiling(cols/(double)plotGrowByCols)*plotGrowByCols];
 
             for (var i = 0; i < rows; i++)
                 for (var k = 0; k < cols; k++)
